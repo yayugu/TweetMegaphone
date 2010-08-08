@@ -28,12 +28,15 @@ twitter = ACCESS_TOKEN.map do |a|
   Twitter.login(a[0], a[1])
 end
 
-search_result = JSON.parse open("http://search.twitter.com/search.json?q=%23TweetMegaphone").read
+search_result = JSON.parse(open("http://search.twitter.com/search.json?q=%23TweetMegaphone").read)
+search_result = search_result['results'].map{|tweet| tweet['id'].to_s}
+yayugu_tweets = JSON.parse(open("http://api.twitter.com/1/statuses/user_timeline.json?screen_name=yayugu").read)
+yayugu_tweets = yayugu_tweets.map{|tweet| tweet['id'].to_s}
+search_result += yayugu_tweets
 
 db = YAML::Store.new('./data.yaml')
 db.transaction do
-  search_result['results'].each do |tweet|
-    id = tweet['id'].to_s
+  search_result.each do |id|
     unless db[id]
       twitter.each do |t|
         p t.post("http://api.twitter.com/1/favorites/create/#{id}.json")
